@@ -1,0 +1,21 @@
+{
+  "name": "whisper",
+  "version": "1.0.0",
+  "description": "基于邮箱的端到端加密P2P私密聊天系统",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve . -p 8080",
+    "dev": "npx serve . -p 8080 -o"
+  },
+  "keywords": [
+    "加密聊天",
+    "端到端加密",
+    "邮箱聊天",
+    "私密聊天"
+  ],
+  "author": "Claude & User",
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.0.0"
+  }
+}
