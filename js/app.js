@@ -610,6 +610,96 @@ function bindUIEvents() {
       });
     }
   }
+
+  // 表情按钮
+  const emojiBtn = document.getElementById('emojiBtn');
+  const emojiPicker = document.getElementById('emojiPicker');
+  if (emojiBtn && emojiPicker) {
+    let isEmojiPickerVisible = false;
+
+    // 初始化表情数据
+    initEmojiPicker();
+
+    emojiBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      isEmojiPickerVisible = !isEmojiPickerVisible;
+      emojiPicker.style.display = isEmojiPickerVisible ? 'block' : 'none';
+    });
+
+    // 点击其他地方关闭表情选择器
+    document.addEventListener('click', (e) => {
+      if (isEmojiPickerVisible && !emojiPicker.contains(e.target)) {
+        emojiPicker.style.display = 'none';
+        isEmojiPickerVisible = false;
+      }
+    });
+  }
+}
+
+/**
+ * 初始化表情选择器
+ */
+function initEmojiPicker() {
+  // 表情数据
+  const emojiData = {
+    smileys: ['😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '😚', '😙', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮', '🤧', '🥵', '🥶', '😶‍🌫️', '🥴', '😵', '🤯', '🤠', '🥳', '🥸', '😎', '🤓', '🧐'],
+    people: ['👋', '🤚', '🖐️', '✋', '🖖', '👌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '💪', '🦾', '🦿', '🦵', '🦶', '👂', '🦻', '👃', '🧠', '🫀', '🫁', '🦷', '🦴', '👀', '👁️', '👅', '👄'],
+    animals: ['🐱', '🐶', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🙈', '🙉', '🙊', '🐒', '🐔', '🐧', '🐦', '🐤', '🐣', '🐥', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🦟', '🦗', '🕷️', '🦂', '🐢', '🐍', '🦎', '🦖', '🦕', '🐙', '🦑', '🦐', '🦞', '🦀', '🐡', '🐠', '🐟', '🐬', '🐳', '🐋', '🦈', '🐊', '🐅', '🐆', '🦓'],
+    food: ['🍕', '🍔', '🍟', '🌭', '🍿', '🧂', '🥓', '🥚', '🍳', '🧇', '🥞', '🧈', '🍞', '🥐', '🥖', '🥨', '🧀', '🥗', '🥙', '🥪', '🌮', '🌯', '🫔', '🥫', '🍝', '🍜', '🍲', '🍛', '🍣', '🍱', '🥟', '🦪', '🍤', '🍙', '🍚', '🍘', '🍥', '🥠', '🥮', '🍢', '🍡', '🍧', '🍨', '🍦', '🥧', '🧁', '🍰', '🎂', '🍮', '🍭', '🍬', '🍫', '🍿', '🍩', '🍪', '🌰', '🥜', '🍯'],
+    activities: ['⚽', '🏀', '🏈', '⚾', '🥎', '🎾', '🏐', '🏉', '🥏', '🎱', '🪀', '🏓', '🏸', '🏒', '🏑', '🥍', '🏏', '🪃', '🥅', '⛳', '🪁', '🏹', '🎣', '🤿', '🥊', '🥋', '🎽', '🛹', '🛼', '🛷', '⛸️', '🥌', '🎿', '⛷️', '🏂', '🪂', '🏋️', '🤼', '🤸', '🤾', '🏌️', '🏇', '🧘', '🏊', '🤽', '🚣', '🧗', '🚴', '🚵', '🎪', '🎭', '🎨'],
+    objects: ['💡', '🔦', '🏮', '🪔', '📱', '💻', '🖥️', '🖨️', '⌨️', '🖱️', '🖲️', '💽', '💾', '💿', '📀', '📼', '📷', '📸', '📹', '🎥', '📞', '☎️', '📟', '📠', '📺', '📻', '🎙️', '🎚️', '🎛️', '🧭', '⏰', '⏱️', '⏲️', '⌛', '⏳', '📡', '🔋', '🔌', '💡', '🔦', '🕯️', '🪔', '🧯', '🛢️', '💸', '💵', '💴', '💶', '💷', '🪙', '💰', '💳', '💎', '⚖️', '🪜', '🧰', '🔧', '🔨', '⚒️', '🛠️', '⛏️', '🪓', '🔩', '⚙️', '🪤']
+  };
+
+  const emojiList = document.getElementById('emojiList');
+  const emojiTabs = document.querySelectorAll('.emoji-tab');
+  let currentCategory = 'smileys';
+
+  // 渲染表情列表
+  function renderEmojis(category) {
+    emojiList.innerHTML = '';
+    const emojis = emojiData[category] || [];
+    emojis.forEach(emoji => {
+      const emojiItem = document.createElement('div');
+      emojiItem.className = 'emoji-item';
+      emojiItem.textContent = emoji;
+      emojiItem.addEventListener('click', () => {
+        insertEmoji(emoji);
+      });
+      emojiList.appendChild(emojiItem);
+    });
+  }
+
+  // 插入表情到输入框
+  function insertEmoji(emoji) {
+    const input = document.getElementById('messageInput');
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+    const text = input.value;
+
+    input.value = text.substring(0, start) + emoji + text.substring(end);
+    input.focus();
+    input.selectionStart = input.selectionEnd = start + emoji.length;
+
+    // 关闭表情选择器
+    const emojiPicker = document.getElementById('emojiPicker');
+    emojiPicker.style.display = 'none';
+  }
+
+  // 切换表情分类
+  emojiTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      // 移除所有active类
+      emojiTabs.forEach(t => t.classList.remove('active'));
+      // 添加当前active类
+      tab.classList.add('active');
+      // 渲染对应分类
+      currentCategory = tab.dataset.category;
+      renderEmojis(currentCategory);
+    });
+  });
+
+  // 初始化默认分类
+  renderEmojis(currentCategory);
 }
 
 /**
@@ -747,33 +837,6 @@ function showToast(message) {
   setTimeout(() => {
     toast.remove();
   }, 3000);
-}
-  const input = document.getElementById('messageInput');
-  const content = input.value.trim();
-
-  if (!content) {
-    return;
-  }
-
-  if (!app.isConnected) {
-    alert('请先配置邮箱!');
-    return;
-  }
-
-  if (!app.isExchangeComplete) {
-    alert('请先完成公钥交换!');
-    return;
-  }
-
-  try {
-    await app.sendMessage(content);
-    input.value = '';
-
-    // 刷新消息列表
-    await refreshMessages();
-  } catch (error) {
-    alert('发送失败: ' + error.message);
-  }
 }
 
 /**

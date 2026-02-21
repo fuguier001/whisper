@@ -42,6 +42,7 @@
     <!-- 输入区域 -->
     <div class="input-area">
       <button id="attachBtn" class="attach-btn" title="附加文件(图片/文档)">📎</button>
+      <button id="emojiBtn" class="emoji-btn" title="表情">😊</button>
       <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.txt" style="display: none;">
       <textarea
         id="messageInput"
@@ -49,6 +50,23 @@
         rows="1"
       ></textarea>
       <button id="sendBtn">发送</button>
+    </div>
+
+    <!-- 表情选择器 -->
+    <div id="emojiPicker" class="emoji-picker" style="display: none;">
+      <div class="emoji-content">
+        <div class="emoji-tabs">
+          <button class="emoji-tab active" data-category="smileys">😊</button>
+          <button class="emoji-tab" data-category="people">👋</button>
+          <button class="emoji-tab" data-category="animals">🐱</button>
+          <button class="emoji-tab" data-category="food">🍕</button>
+          <button class="emoji-tab" data-category="activities">⚽</button>
+          <button class="emoji-tab" data-category="objects">💡</button>
+        </div>
+        <div class="emoji-list" id="emojiList">
+          <!-- 表情将通过JS动态加载 -->
+        </div>
+      </div>
     </div>
   </div>
 

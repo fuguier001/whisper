@@ -166,6 +166,23 @@ body {
   color: #667eea;
 }
 
+.emoji-btn {
+  background: #f5f5f5;
+  border: 2px solid #e0e0e0;
+  color: #666;
+  padding: 12px 16px;
+  border-radius: 24px;
+  cursor: pointer;
+  font-size: 18px;
+  transition: all 0.3s;
+}
+
+.emoji-btn:hover {
+  background: #e0e0e0;
+  border-color: #667eea;
+  color: #667eea;
+}
+
 #messageInput {
   flex: 1;
   padding: 12px 18px;
@@ -530,4 +547,67 @@ body {
   color: #667eea;
   cursor: pointer;
   text-decoration: none;
+}
+
+/* ==================== 表情选择器 ==================== */
+.emoji-picker {
+  position: fixed;
+  bottom: 80px;
+  left: 20px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  z-index: 1500;
+  max-width: 350px;
+}
+
+.emoji-content {
+  padding: 15px;
+}
+
+.emoji-tabs {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+
+.emoji-tab {
+  background: #f5f5f5;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 15px;
+  cursor: pointer;
+  font-size: 18px;
+  transition: all 0.3s;
+}
+
+.emoji-tab:hover {
+  background: #e0e0e0;
+}
+
+.emoji-tab.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.emoji-list {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 5px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.emoji-item {
+  font-size: 24px;
+  padding: 5px;
+  text-align: center;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.emoji-item:hover {
+  background: #f5f5f5;
 }
