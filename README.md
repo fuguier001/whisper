@@ -1,5 +1,9 @@
 # 悄悄话 - 基于邮箱的P2P私密聊天
 
+[![Version](https://img.shields.io/badge/version-1.0-brightgreen.svg)](https://github.com/fuguier001/whisper)
+[![Status](https://img.shields.io/badge/status-production--ready-success.svg)](https://github.com/fuguier001/whisper)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 ## 🎯 项目简介
 
 **悄悄话**是一个基于邮箱的端到端加密P2P聊天系统,无需中央聊天服务器,两台设备通过邮箱直接通信。
