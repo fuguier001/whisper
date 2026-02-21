@@ -248,6 +248,87 @@ class WhisperApp {
   }
 
   /**
+   * 发送文件/图片
+   * @param {File} file - 文件对象
+   */
+  async sendFile(file) {
+    try {
+      if (!this.isExchangeComplete) {
+        throw new Error('公钥交换未完成,无法发送加密文件');
+      }
+
+      // 检查文件大小(限制10MB)
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        throw new Error('文件过大,最大支持10MB');
+      }
+
+      // 显示进度
+      showToast('正在加密文件...');
+
+      // 生成AES密钥
+      const aesKey = await this.crypto.generateAESKey();
+
+      // 加密文件
+      const encryptedFile = await this.crypto.encryptFile(file, aesKey);
+
+      // 加密AES密钥
+      const encryptedKey = await this.crypto.encryptAESKey(aesKey);
+
+      // 判断文件类型
+      const isImage = file.type.startsWith('image/');
+      const messageType = isImage ? 'image' : 'file';
+
+      // 构造消息数据
+      const messageData = {
+        encryptedKey: encryptedKey,
+        encryptedContent: encryptedFile.encrypted,
+        iv: encryptedFile.iv,
+        timestamp: new Date().toISOString(),
+        sender: this.config.myEmail,
+        recipient: this.config.peerEmail,
+        type: messageType,
+        fileName: encryptedFile.fileName,
+        fileType: encryptedFile.fileType,
+        fileSize: encryptedFile.fileSize
+      };
+
+      // 发送邮件
+      await this.email.sendMessage(messageData);
+
+      // 保存到本地(对于图片,保存预览URL)
+      let previewData = null;
+      if (isImage) {
+        const reader = new FileReader();
+        previewData = await new Promise((resolve) => {
+          reader.onload = (e) => resolve(e.target.result);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      await this.storage.saveMessage({
+        type: messageType,
+        content: isImage ? previewData : null, // 图片保存预览,文件保存null
+        fileName: encryptedFile.fileName,
+        fileType: encryptedFile.fileType,
+        fileSize: encryptedFile.fileSize,
+        encryptedContent: encryptedFile.encrypted,
+        sender: this.config.myEmail,
+        timestamp: messageData.timestamp,
+        encryptedKey: encryptedKey,
+        iv: encryptedFile.iv,
+        incoming: false
+      });
+
+      console.log('✅ 文件已发送');
+      return true;
+    } catch (error) {
+      console.error('❌ 发送文件失败:', error);
+      throw error;
+    }
+  }
+
+  /**
    * 接收消息
    */
   async onMessageReceived(messageData) {
@@ -257,19 +338,38 @@ class WhisperApp {
       // 解密AES密钥
       const aesKey = await this.crypto.decryptAESKey(messageData.encrypted_key);
 
-      // 解密消息内容
-      const decrypted = await this.crypto.decryptMessage(
-        messageData.encrypted_content,
-        messageData.iv,
-        aesKey
-      );
+      let content = null;
+      let messageType = messageData.type || 'text';
 
-      console.log('✅ 消息解密成功:', decrypted);
+      // 根据消息类型解密
+      if (messageType === 'text') {
+        // 解密文本消息
+        content = await this.crypto.decryptMessage(
+          messageData.encrypted_content,
+          messageData.iv,
+          aesKey
+        );
+        console.log('✅ 消息解密成功:', content);
+      } else if (messageType === 'image' || messageType === 'file') {
+        // 文件消息 - 解密并生成预览
+        if (messageType === 'image') {
+          content = await this.crypto.decryptFileToDataUrl(
+            messageData.encrypted_content,
+            messageData.iv,
+            aesKey,
+            messageData.fileType
+          );
+        }
+        console.log('✅ 文件解密成功');
+      }
 
       // 保存到本地
       await this.storage.saveMessage({
-        type: 'text',
-        content: decrypted,
+        type: messageType,
+        content: content,
+        fileName: messageData.fileName,
+        fileType: messageData.fileType,
+        fileSize: messageData.fileSize,
         encryptedContent: messageData.encrypted_content,
         sender: messageData.sender,
         timestamp: messageData.timestamp,
@@ -281,7 +381,11 @@ class WhisperApp {
       // 触发UI更新
       if (this.onMessageCallback) {
         this.onMessageCallback({
-          content: decrypted,
+          type: messageType,
+          content: content,
+          fileName: messageData.fileName,
+          fileType: messageData.fileType,
+          fileSize: messageData.fileSize,
           sender: messageData.sender,
           timestamp: messageData.timestamp,
           incoming: true
@@ -448,6 +552,64 @@ function bindUIEvents() {
       }
     });
   }
+
+  // 附件按钮
+  const attachBtn = document.getElementById('attachBtn');
+  const fileInput = document.getElementById('fileInput');
+  if (attachBtn && fileInput) {
+    attachBtn.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    // 文件选择
+    let selectedFile = null;
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      selectedFile = file;
+
+      // 如果是图片,显示预览
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const preview = document.getElementById('imagePreview');
+          const previewImage = document.getElementById('previewImage');
+          previewImage.src = e.target.result;
+          preview.style.display = 'flex';
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // 非图片文件直接确认
+        if (confirm(`要发送文件 "${file.name}" 吗?`)) {
+          sendFile(file);
+        }
+      }
+    });
+
+    // 确认上传
+    const confirmUpload = document.getElementById('confirmUpload');
+    if (confirmUpload) {
+      confirmUpload.addEventListener('click', () => {
+        if (selectedFile) {
+          sendFile(selectedFile);
+          document.getElementById('imagePreview').style.display = 'none';
+          selectedFile = null;
+          fileInput.value = '';
+        }
+      });
+    }
+
+    // 取消上传
+    const cancelUpload = document.getElementById('cancelUpload');
+    if (cancelUpload) {
+      cancelUpload.addEventListener('click', () => {
+        document.getElementById('imagePreview').style.display = 'none';
+        selectedFile = null;
+        fileInput.value = '';
+      });
+    }
+  }
 }
 
 /**
@@ -547,6 +709,74 @@ async function sendMessage() {
 }
 
 /**
+ * 发送文件
+ */
+async function sendFile(file) {
+  if (!app.isConnected) {
+    alert('请先配置邮箱!');
+    return;
+  }
+
+  if (!app.isExchangeComplete) {
+    alert('请先完成公钥交换!');
+    return;
+  }
+
+  try {
+    showToast('正在发送文件...');
+    await app.sendFile(file);
+
+    // 刷新消息列表
+    await refreshMessages();
+
+    showToast('文件发送成功!');
+  } catch (error) {
+    alert('发送文件失败: ' + error.message);
+  }
+}
+
+/**
+ * 显示Toast提示
+ */
+function showToast(message) {
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 3000);
+}
+  const input = document.getElementById('messageInput');
+  const content = input.value.trim();
+
+  if (!content) {
+    return;
+  }
+
+  if (!app.isConnected) {
+    alert('请先配置邮箱!');
+    return;
+  }
+
+  if (!app.isExchangeComplete) {
+    alert('请先完成公钥交换!');
+    return;
+  }
+
+  try {
+    await app.sendMessage(content);
+    input.value = '';
+
+    // 刷新消息列表
+    await refreshMessages();
+  } catch (error) {
+    alert('发送失败: ' + error.message);
+  }
+}
+
+/**
  * 刷新消息列表
  */
 async function refreshMessages() {
@@ -561,9 +791,34 @@ async function refreshMessages() {
       div.className = msg.incoming ? 'message incoming' : 'message outgoing';
 
       const time = new Date(msg.timestamp).toLocaleTimeString();
+
+      // 根据消息类型渲染不同的内容
+      let contentHtml = '';
+      if (msg.type === 'image') {
+        // 图片消息
+        contentHtml = `
+          <img src="${msg.content}" class="message-image" alt="图片" onclick="this.style.maxHeight === 'none' ? this.style.maxHeight = '300px' : this.style.maxHeight = 'none'">
+        `;
+      } else if (msg.type === 'file') {
+        // 文件消息
+        const fileSize = formatFileSize(msg.fileSize);
+        contentHtml = `
+          <div class="message-file">
+            <span class="message-file-icon">📄</span>
+            <div class="message-file-info">
+              <div class="message-file-name">${msg.fileName}</div>
+              <div class="message-file-size">${fileSize}</div>
+            </div>
+          </div>
+        `;
+      } else {
+        // 文本消息
+        contentHtml = `<div class="message-text">${msg.content}</div>`;
+      }
+
       div.innerHTML = `
         <div class="message-content">
-          <div class="message-text">${msg.content}</div>
+          ${contentHtml}
           <div class="message-time">${time}</div>
         </div>
       `;
@@ -574,6 +829,17 @@ async function refreshMessages() {
     // 滚动到底部
     container.scrollTop = container.scrollHeight;
   }
+}
+
+/**
+ * 格式化文件大小
+ */
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
 }
 
 /**

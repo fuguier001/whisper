@@ -223,6 +223,42 @@ class CryptoManager {
   }
 
   /**
+   * 加密文件/图片
+   * @param {File} file - 文件对象
+   * @param {CryptoKey} aesKey - AES密钥
+   */
+  async encryptFile(file, aesKey) {
+    try {
+      // 生成随机IV
+      const iv = window.crypto.getRandomValues(new Uint8Array(12));
+
+      // 读取文件内容
+      const fileData = await this.readFileAsArrayBuffer(file);
+
+      // 加密文件数据
+      const encrypted = await window.crypto.subtle.encrypt(
+        {
+          name: 'AES-GCM',
+          iv: iv
+        },
+        aesKey,
+        fileData
+      );
+
+      return {
+        encrypted: this.arrayBufferToBase64(encrypted),
+        iv: this.arrayBufferToBase64(iv),
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size
+      };
+    } catch (error) {
+      console.error('❌ 加密文件失败:', error);
+      throw error;
+    }
+  }
+
+  /**
    * 使用AES-GCM解密消息内容
    */
   async decryptMessage(encryptedData, iv, aesKey) {
@@ -243,6 +279,72 @@ class CryptoManager {
       return decoder.decode(decrypted);
     } catch (error) {
       console.error('❌ 解密消息失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 解密文件/图片
+   * @param {string} encryptedData - 加密的文件数据(Base64)
+   * @param {string} iv - IV(Base64)
+   * @param {CryptoKey} aesKey - AES密钥
+   */
+  async decryptFile(encryptedData, iv, aesKey) {
+    try {
+      const encrypted = this.base64ToArrayBuffer(encryptedData);
+      const ivData = this.base64ToArrayBuffer(iv);
+
+      const decrypted = await window.crypto.subtle.decrypt(
+        {
+          name: 'AES-GCM',
+          iv: new Uint8Array(ivData)
+        },
+        aesKey,
+        encrypted
+      );
+
+      return new Uint8Array(decrypted);
+    } catch (error) {
+      console.error('❌ 解密文件失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 将文件读取为ArrayBuffer
+   */
+  readFileAsArrayBuffer(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  /**
+   * 将ArrayBuffer转换为Blob
+   */
+  arrayBufferToBlob(buffer, mimeType) {
+    return new Blob([buffer], { type: mimeType });
+  }
+
+  /**
+   * 将加密数据转换为Data URL(用于显示图片)
+   */
+  async decryptFileToDataUrl(encryptedData, iv, aesKey, mimeType) {
+    try {
+      const decrypted = await this.decryptFile(encryptedData, iv, aesKey);
+      const blob = this.arrayBufferToBlob(decrypted, mimeType);
+
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('❌ 解密文件到Data URL失败:', error);
       throw error;
     }
   }
